@@ -1,0 +1,964 @@
+% options:
+% thesis=B bachelor's thesis
+% thesis=M master's thesis
+% czech thesis in Czech language
+% english thesis in English language
+% hidelinks remove colour boxes around hyperlinks
+
+\documentclass[thesis=M,english]{FITthesis}[2012/10/20]
+
+\usepackage[utf8]{inputenc} % LaTeX source encoded as UTF-8
+
+\usepackage{graphicx} %graphics files inclusion
+% \usepackage{subfig} %subfigures
+% \usepackage{amsmath} %advanced maths
+% \usepackage{amssymb} %additional math symbols
+
+\usepackage{dirtree} %directory tree visualisation
+\usepackage{listings}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{lightgray}{rgb}{0.8,0.8,0.8}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  basicstyle=\scriptsize\ttfamily,        % the size of the fonts that are used for the code
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lightgray},
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=7pt,
+  numberstyle=\tiny,
+  language=Java,
+  keywordstyle=\color{blue},
+  commentstyle=\color{mygreen},
+  stringstyle=\color{mymauve},
+  numberstyle=\tiny\color{mygray},
+}
+
+
+%\usepackage{color}
+\usepackage{multirow}
+
+%\usepackage{minted}
+
+% % list of acronyms
+% \usepackage[acronym,nonumberlist,toc,numberedsection=autolabel]{glossaries}
+% \iflanguage{czech}{\renewcommand*{\acronymname}{Seznam pou{\v z}it{\' y}ch zkratek}}{}
+% \makeglossaries
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% EDIT THIS
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+\department{Department of Software Engineering}
+\title{Framework for similarity searching in chemical databases}
+\authorGN{Martin} %author's given name/names
+\authorFN{Mates} %author's surname
+\author{Martin Mates} %author's name without academic degrees
+\authorWithDegrees{Bc. Martin Mates} %author's name with academic degrees
+\supervisor{RNDr. David Hoksza, Ph.D.}
+\acknowledgements{THANKS}
+\abstractEN{Summarize the contents and contribution of your work in a few sentences in English language.}
+\abstractCS{V n{\v e}kolika v{\v e}t{\' a}ch shr{\v n}te obsah a p{\v r}{\' i}nos t{\' e}to pr{\' a}ce v {\v c}esk{\' e}m jazyce.}
+\placeForDeclarationOfAuthenticity{Prague}
+\keywordsCS{Replace with comma-separated list of keywords in Czech.}
+\keywordsEN{Replace with comma-separated list of keywords in English.}
+\declarationOfAuthenticityOption{1} %select as appropriate, according to the desired license
+
+
+\begin{document}
+
+% \newacronym{CVUT}{{\v C}VUT}{{\v C}esk{\' e} vysok{\' e} u{\v c}en{\' i} technick{\' e} v Praze}
+% \newacronym{FIT}{FIT}{Fakulta informa{\v c}n{\' i}ch technologi{\' i}}
+
+\setsecnumdepth{part}
+\chapter{Introduction}
+
+
+
+\setsecnumdepth{all}
+\chapter{The problem, specification and goals}
+In the world of chemistry every company or organization has its own warehouse of chemical compounds for their needs. These warehouses are often very large. Pharmaceutical companies for instance rarely have less than thousands of various chemicals.
+
+Variety of enterprise software solutions for working with chemical compounds is available today. These programs serve primarily as an internal warehouse management of chemicals and like in every store the most common task is to find something very quickly.
+
+In common warehouses objects are organized according to various criteria, such as name, identification number, or category. It works the same way in chemical warehouses. The problem is that not every molecule has its own simple name or has multiple, categorization is difficult, and identification number must be known in advance. For this reason the storage of chemicals is searched in a slightly different way.
+
+Each molecule has a molecular formula, and it is possible to draw it using the chemical structure diagram. It is the most common way to exchange information in chemical industry and it is a natural language of chemists. Enterprise systems respect this and allow searching by drawing a structure diagram (see Section \ref{structureDiagramRef}).
+
+Nowadays work with these programs is very common for chemists. They draw desired structure or its part and the system searches the database in order to find requested molecule. This is called exact search and substructure search.
+
+These search methods are good enough if we have a better idea of what we are looking for. However chemists need to find compounds similar to what they drew much more often. This is where similarity searching takes its place. Similarity can be defined arbitrarily for example as a comparison of molecular weight.
+
+\section{Motivation and current state}
+Companies in the chemical industry producing chemical compounds often offer them for sale. This is a well-established business and a lot of manufacturers own patents and are exclusive suppliers. The customer is most likely another company in the field of chemistry. Pharmaceutical company for example needs variety of compounds for drug production or research. Compounds come from many different vendors and they all need to offer or promote their molecules in an effective way.
+
+Compound manufacturers provide catalogues in paper form with structure diagrams, catalog numbers and some properties description. Searching in these catalogues is very inefficient since they are often hundreds of pages long. This form of propagation is very common however.
+
+Another option that these companies use is the registration of compounds in a public online catalogue such as eMolecules or ChemSpider. These catalogues support different search methods. Exact, substructure and some basic similarity search are commonly included. The main problem of these catalogues is that it is not possible to use their search engine for private purposes or define a custom similarity measure.
+
+In this case if customer finds a molecule in the online catalogue, link to the manufacturer's website is provided then customer is navigated to the compound detail page where they can buy. However if the same customer wants to search for something else at the same supplier, it must return to the catalogue and search entire database again. Search is then performed between all other competitors as well. This isn’t very good for manufacturer since the customer is leaving its site and may buy at the competing company instead.
+
+Therefore the ideal solution is to provide the customer with a similarity search directly at the manufacturers website or to show him some similar compounds automatically. This is of course possible, but unfortunately there is currently no solution available at a reasonable price. 
+
+Compound manufacturers are thus forced to inquire the development of custom solution. This is very expensive since almost no web developer neither software company has sufficient knowledge required in the field of chemistry. Software developers therefore use various existing libraries and put them together according to specific requirements or build an application from scratch which is very time consuming.
+
+\section{Framework idea}
+Since compound manufacturers often don’t want to invest so much time and resources into the development of their own custom online search engine, it is expected that existing open-source solution will be in great demand.
+
+However in every field of chemical industry different way of searching is appropriate. Thus it would be very difficult to develop a universal solution that matches all possible needs. A much better idea is to implement a framework that facilitates the creation of such similarity searching and is sufficiently platform-independent for usage on the web. 
+
+This framework should actually be a ready-to-use search engine where programmer is able to define similarity measure in modular way and run it on any database.
+
+\subsection{Similarity searching}
+The main purpose of the framework would be to perform similarity search over chemical database. But what exactly is similarity searching and how does it work?
+
+To perform this kind of search first thing we need is to specify a query molecule, which is than used to search a database to identify compounds of interest. Search engine basically compare all compounds from database one by one and looks for similarities to the query molecule. 
+
+The second thing necessary is to define what our similarity is. In the world of chemistry it can be a lot of different things. 
+
+\subsection{Exact and substructure similarity}
+A simple but very popular form of similarity searching is the detection of structural fragments. Substructure searching is perhaps the most widely used approach to identify compounds of interest. It identifies all the molecules in the database that contain a specified substructure. A simple example would be to identify all structures that contain a particular functional group or sequence of atoms. Figure \ref{fig:substructure_idea} illustrates the idea of substructure searching. It is basically a graph isomorphism problem.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=9cm]{img/substructure_idea.png}
+  \caption{Example of compounds containing Aspirin as a substructure that
+can be used as a query for database searching}
+  \label{fig:substructure_idea}
+\end{figure}
+
+
+\subsection{Similarity measure over descriptors}
+Another form of similarity searching is over molecular descriptors. A simple example of this kind of similarity search is comparison of molecular weights or count of carbon atoms. But how do we know the molecular weight or number of carbon atoms? These values are called molecular descriptors and as the name suggests these values describe features of the molecule. Each molecule has its own value for each descriptor and can be computed in advance.
+
+Of course in the real world usage much more complex similarity measures and descriptors are needed and often combine more different approaches.
+
+These descriptors are integral part of similarity searching and thus should be a part of our framework.
+
+
+\subsection{Similarity coefficients}
+An interesting way of similarity searching is over similarity coefficients. Unlike molecular descriptors these coefficients are always calculated between 2 molecules and thus cannot be calculated in advance. Every query molecule is different and so the coefficient.
+
+This concept of similarity is important in many fields (not just chemistry) and many different similarity coefficients have been developed. In fact the most similarity coefficients are calculated from molecular descriptors such as binary or hashed fingerprints (see Chapter XY).
+
+Those most commonly used coefficients in chemical applications are shown in Figure \ref{fig:coefficients} Tanimoto coefficient is the most widely used similarity coefficient for binary and hashed fingerprints.\cite{intro}
+
+
+\begin{figure}
+  \centering
+  \includegraphics[width=9cm]{img/coefficients.png}
+  \caption{Similarity (\textit{S}) or distance (\textit{D}) coefficients in common use for similarity searching in
+chemical databases. For binary data \textit{a} is defined as the number of bits set to ``1'' in molecule \textit{A},
+\textit{b} as the number of bits set to ``1''  in molecule \textit{B} and \textit{c} as the number of bits that are “1” in both
+\textit{A} and \textit{B}.}
+  \label{fig:coefficients}
+\end{figure}
+
+
+In our similarity framework these coefficients have to be taken into account. Framework has to provide a way to define this kind of similarity.
+
+
+\section{State of the Art}
+According to my research, RNDr. David Hoksza, Ph.D. my supervisor and Ladislav Drož, Ph.D. CEO of Apigenex s.r.o.\footnote{ Pharmaceutical company selling chemical compounds}, there is no such similarity framework or open-source solution for similarity searching on the web available.
+
+A lot of libraries for chemistry are available however. These libraries are commercial or open-source and are often used internally in various chemical applications. Each library is designed for different set of tasks. But what is most in our interest is that some of them can calculate various descriptors or can perform a lot of similarity calculations. I will talk about these libraries later in the implementation part (see Section \ref{chemLibrariesRef}).
+
+Also searching for compounds on the web is not new at all. There are a lot of applications running. The problem is that they are often used for searching in public compound databases only, their search engine is not open-source, there is no way to define custom similarity and they cannot be used for private purposes. 
+
+\subsection{ChemSpider}
+ChemSpider is a chemistry search engine that has been built with the intention of aggregating and indexing chemical structures and their associated information into a single searchable repository and making it freely available to everybody.\cite{taverna}
+
+This is a very complex solution offering all common ways of searching: exact, substructure and similarity. ChemSpider offers Tanimoto, Tversky and Euclidean coefficients. There is also an advanced searching available according to molecular formula, molecular weight and much more. Service is available at: \url{http://www.chemspider.com/}
+
+ChemSpider searches through its own large database of compounds and can be used as a web service.
+This service doesn’t offer either search engine for private usage or the definition of custom similarity.  It also can’t be used for custom compound database.
+
+\subsection{ChEBI}
+Chemical Entities of Biological Interest (ChEBI) is a freely available database of molecular entities focused on small chemical compounds and it can be found at \url{http://www.ebi.ac.uk/chebi/}. ChEBI incorporates an ontological classification, whereby the relationships between molecular entities or classes of entities and their parents and/or children are specified.\cite{taverna}
+
+ChEBI offers structure and substructure searching and also some filters over molecular mass or charge. There are no similarity coefficients available.
+
+Like ChemSpider there is no option to define custom similarity or to use the search engine for private purposes.
+
+\subsection{PubChem}
+PubChem is a free database of chemical structures containing small organic molecules and information on their biological activities provided by the National Center for Biotechnology Information (NCBI), part of the United States National Institutes of Health (NIH). \cite{taverna}
+
+PubChem is located at \url{http://pubchem.ncbi.nlm.nih.gov/} and like ChemSpider or ChEBI it’s a public compound catalogue with advanced similarity searching. However PubChem has the most complex searching options and provide all common methods of similarity.
+
+There is also no option of using PubChem search engine for private purposes or to define custom similarity.
+
+\subsection{Chemicalize}
+Chemicalize is a structure database at \url{http://www.chemicalize.org/} developed by ChemAxon a leading company providing chemical software development. It contains more than 240 000 of compounds and can be searched by structure similarity. Other forms of similarity are missing.
+
+This is also not an open source solution available for custom implementations.
+
+\subsection{eMolecules}
+There are various compound vendor catalogues available worldwide and this is probably the largest of them. It is said that 9 of the 10 largest pharmaceutical companies work with eMolecules. It has more than 150 different suppliers to be searched for compounds.\cite{emolecules}
+
+eMolecules are available at \url{http://www.emolecules.com/}. Their search engine is very fast and optimized. Exact, substructure and similarity over Tanimoto coefficient searching options are available.
+
+This is a commercial solution with no possible customization or private use.
+
+\subsection{ChemExper}
+In this case we are talking about compound suppliers catalogue just like eMolecules. This service is less complex and offer only exact and substructure search. As a commercial implementation there is also no possibility to customize or use it in any way.
+
+\subsection{OrChem}
+Unlike previous solutions this is a chemistry plugin for Oracle database written in Java. 
+
+Oracle Data cartridges extend the capabilities of the Oracle server. For chemistry various commercial cartridges exist that facilitate searching and analyzing chemical data. OrChem also provides functionality like this, but is not a cartridge. It doesn't need Oracle's extensibility architecture because its Java components run as Java stored procedures inside the Oracle standard JVM (Aurora).\cite{orchem}
+
+This solution enables the SQL database queries to work with chemical compounds. Using OrChem one can query the Oracle database for similarities using classic SQL commands. By default there is substructure searching and also some basic similarities over descriptors available.
+
+This is an open-source solution so it can be used for custom purposes and for custom repository of compounds. I believe that after deep study of the code, it would be possible to define custom similarities and feature extraction.
+
+It is very promising but limitation to Oracle database is very binding since compound vendors or pharmaceutical companies rarely use it. Search engine in the framework should be database independent. In addition Oracle database is a commercial solution and thus usage of the framework would be dependent on Oracle license purchase.
+
+\subsection{Conclusion}
+As we see there are many of real world examples of similarity searching on the web. It is clear that every service has its own implementation and keeps it as precious know-how. It is understandable since this is not a simple application to give out.
+
+There is no ready-to-use solution for similarity searching on the web that could be used for custom compound database and is platform-independent enough. No solution except OrChem provides a way to define custom similarity. 
+
+
+\chapter{Analysis}
+As mentioned in previous chapter the main goal of the similarity framework is facilitating implementation of the application for searching in databases of chemical compounds. The framework will provide a modular way to define both feature extraction of molecules (descriptor) and similarity measure over these features. Given a definition of extraction methodology and a definition of similarity a user will be able to simply specify the database of molecules and perform search by similarity with respect to the query molecule. 
+
+\section{Framework as a web service}
+One of the main reasons of implementing this framework is searching for compounds on the web. Every web application may be built using different programming language, framework or different standards. Thus usage of the similarity framework should be platform-independent.
+
+The best way to achieve this is to build a uniform interface for communication over the network. For these purposes the standard solution is to use web service architecture.
+
+\section{Framework features}
+According to cheminformatics and compound manufacturers needs discussed in previous chapter, following list of features summarizes all possible use cases of the framework.\\
+Programmer:
+\begin{itemize}
+\item Can modularly define feature extraction from molecule (descriptor).
+\item Can modularly define similarity working with these descriptors.
+\item Can use these descriptors and similarities over any chemical database.
+\item Can import structures from SDF file to the database
+\end{itemize}
+Client via web service:
+\begin{itemize}
+\item Can run any similarity on specified molecule with parameters.
+\item Can query previous request results with pagination.
+\item Can obtain information about what similarities are available and what parameters they require.
+\item Can query how many molecules are in the database.
+\item Can obtain molecules from database with pagination.
+\item Can obtain molecule with a given id from the database.
+\item Can add new compound to the database.
+\end{itemize}
+
+
+\section{Basic entities of the Framework}
+Our similarity framework will operate with these three basic entities: Chemical Compound, Similarity and Descriptor.
+
+\subsection{Chemical Compound}
+Chemical Compound is basically an electronic representation of the molecule. I will talk more about data representation of chemical structures later in Chapter \ref{chemicalDataRef}. For now it is an abstraction of compound that Similarity and Descriptor work with. 
+
+It doesn’t matter what compound representation is present in specific database. Every molecule has to be converted to this representation so whole framework can operate with it. 
+
+\subsection{Descriptor}
+These are numerical values that characterize properties of molecules. Many different molecular descriptors have been described and used for a wide variety of purposes. They vary in the complexity of the information they encode and in the time required to calculate them. In general, the computational requirements increase with the level of discrimination that is achieved. For example, the molecular weight does not convey much about a molecule’s properties but it is very rapid to compute. By contrast, descriptors that are based on quantum mechanics may provide accurate representations of properties, but they are much more time consuming to compute. \cite{intro}
+
+In other words, Descriptor may be a numerical value or an array of values. Framework has to enable computation of these values in advance because, as mentioned before, computation may be very time-consuming. Framework will also provide a way to modularly add any Descriptor. These values are fundamental for similarity searching.
+
+\subsection{Similarity}
+\textit{Similarity} is an abstraction of similarity computation between two chemical compounds. It contains an algorithm for comparison that may use one or more molecular descriptors.
+
+Since Framework may be used on top of any database, Similarity has to hold the information about database connection and provide data retrieval.
+
+Similarity may also accept parameters because it can be defined generally. For example, atom count similarity has to know what atoms to count. 
+
+Similarity has to return whether two compounds are similar or not. This will be represented as value between 0 and 1 where 0 means no similarity at all.
+
+
+\section{Basic framework structure}
+The very basic scenario of framework usage is the following (see Fig. \ref{fig:basic_idea}):
+\begin{enumerate}
+\item The client makes a HTTP request through API (web service) specifying which similarity to use. Client also sends the query molecule.
+\item	Application runs selected similarity on query molecule.
+\item	Selected Similarity performes searching. It uses descriptors, goes through whole database and returns results.
+\item	HTTP response is returned to the client containing requested results.
+\end{enumerate}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=11cm]{img/basic_idea.png}
+  \caption{Basic framework structure}
+  \label{fig:basic_idea}
+\end{figure}
+
+
+\chapter{Implementation}
+
+TODO
+
+\section{Cheminformatics}
+During the implementation it was necessary to understand some technical aspects of chemistry. In fact, the problem that the framework faciliates belongs to field where computer science meets chemistry, to cheminformatics.
+
+Cheminformatics also known as chemoinformatics and chemical informatics is the use of computer and informational techniques applied to a range of problems in the field of chemistry. These techniques are used in pharmaceutical companies in the process of drug discovery. These methods can also be used in chemical and allied industries in various other forms. \cite{wiki1}
+
+In literature the term chemoinformatics was first introduced by F.K. Brown in 1998. However the term chemical informatics was already used much earlier and generally understood as the application of information technology to chemistry thus lacks a specific drug discovery focus.\cite{bunin}
+
+The spectrum of chemoinformatics:
+\begin{itemize}
+\item Chemical data collection, analysis, and management
+\item Data representation and communication
+\item Database design and organization
+\item Chemical structure and property prediction (including drug-likeness)
+\item Molecular similarity and diversity analysis
+\item Compound or library design and optimization
+\item Database mining
+\item Compound classification and selection
+\item Qualitative and quantitative structure-activity or – property relationships
+\item Information theory applied to chemical problems
+\item Statistical models and descriptors in chemistry
+\item Prediction of compound characteristics in natural environment 
+\end{itemize}
+
+\section{Data representation of chemical structures}
+\label{chemicalDataRef}
+In our similarity framework working with chemical structures in electronic form is the key feature. This section briefly summarizes basic methods of molecule representation and discusses some of the special problems that arise.
+
+Basically we need representation that shows the way in which the atoms and bonds of a molecule are connected together. This is necessary if molecules are to compare. 
+
+Chemical structures are usually stored in a computer as molecular graphs. Graph theory is a well-established area of mathematics that has found application not just in chemistry but also in many other areas, such as computer science. A graph is an abstract structure that contains nodes connected by edges. In our case nodes are atoms and edges are bonds.
+
+Such representation also enables us to display conventional two-dimensional structure diagrams on computer screens, and the performance of a wide variety of other analyses such as descriptor calculations or other complex predicted values.
+
+\subsection{Structure diagram}
+\label{structureDiagramRef}
+The familiar two-dimensional chemical structure diagram could be considered to
+be the “natural language” of the chemist, and in everyday communication chemists almost invariably resort to it as their preferred form of structure representation (see Figure \ref{fig:nomenclature}).
+
+Structure diagrams have found their way into computer-based information systems and their appearance is generally restricted to the user interface. Other types of representation are used internally.
+
+Many “molecule editor” programs are available to enable the user to draw structure diagram on a computer screen by using a mouse. An internal (usually connection table) representation of the structure is built at the same time.\cite{handbook}
+
+\subsection{Chemical nomenclature}
+There are two types of basic chemical nomenclature: trivial and systematic. Trivial is basically the name of the structure. Unfortunately only a limited subset of compounds has their trivial name. On the other hand systematic nomenclature is a description of the compound structure, with fragments (sub-strings) of the name representing structural features (see Figure \ref{fig:nomenclature}).\cite{handbook}
+
+Neither trivial nor systematic nomenclature was designed as a computer representation of chemical structures.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=11cm]{img/nomenclature.png}
+  \caption{2D structure diagram with some corresponding names}
+  \label{fig:nomenclature}
+\end{figure}
+
+
+\subsection{Line Notations}
+One way to represent and communicate a molecular graph is through the use of a linear notation. Line Notations are representations of molecular structures in the form of linear strings of alphanumeric symbols. They were first developed before computers became generally available, and were intended as manual ciphering tools, more convenient to use than systematic nomenclature. 
+
+Their compactness, however, made them especially suitable for use in computer systems at a time when computer storage was limited. Line notations were the predominant form for full computer representation of chemical substances during the 1960s and 1970s.\cite{handbook}
+
+An early line notation that became quite widely used was the Wiswesser Line Notation (WLN). This uses a complex set of rules to represent different functional groups and the way they are connected in the molecule. A recent linear notation that has found widespread acceptance is the Simplified Molecular Input Line Entry Specification (SMILES) notation.
+
+One reason for the extensive use of SMILES is that it is much easier to use and comprehend than the WLN. Just a few rules are needed to write and understand most SMILES strings.
+
+In SMILES, atoms are represented by their atomic symbol. Hydrogen atoms are not normally explicitly represented. Double bonds are written using ``='' and triple bonds using ``\#''. Single and aromatic bonds are not explicitly represented by any symbol. 
+
+To construct a SMILES string one needs to iterate through the chemical structure in such a way that all the atoms are visited just once. Rings are dealt with by breaking one of the bonds in each ring. Appending an integer to the two atoms of the broken bond then indicates the presence of the ring. As one progresses through the molecule one will usually arrive at branch points, where more than one possible avenue could be followed. The presence of a branch point is indicated using a lefthand bracket. A right-hand bracket indicates that all the atoms in that branch have been visited. Branches can be nested to any level necessary (see Figure \ref{fig:smiles}).\cite{intro}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=12cm]{img/smiles.png}
+  \caption{Some examples of the SMILES strings for a variety of molecules}
+  \label{fig:smiles}
+\end{figure}
+
+\subsection{Connection table}
+Another way to communicate the molecular graph to and from the computer is to use a connection table. 
+
+The simplest type of connection table consists of two sections: first, a list of the atomic numbers of the atoms in the molecule and second a list of the bonds, specified as pairs of bonded atoms. More detailed forms of connection table include additional information such as the hybridisation state of each atom and the bond order. One key point to note is that hydrogen atoms may not necessarily be explicitly included in the connection table (i.e. they may be implied) in which case the connection table is hydrogen-suppressed. Information about the coordinates of the atoms may also be present to enable a standard chemical drawing to be produced or for use in a molecular graphics program.\cite{intro}
+
+\subsubsection{MDL format}
+\label{mdlFormatRef}
+
+Perfect example of the connection table is the MDL format developed by MDL Information Systems. This format is used to store compounds in example database of our similarity framework. Example for aspirin is shown in Figure \ref{fig:mdl}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=12cm]{img/mdl.png}
+  \caption{The connection table for aspirin in the MDL format (hydrogen-suppressed form).
+The numbering of the atoms is as shown in the chemical diagram.}
+  \label{fig:mdl}
+\end{figure}
+
+\subsubsection{Structure Data Format (SDF)}
+Like MDL Molfile, SDF is one of a family of chemical-data file formats developed by MDL Information Systems. It is intended especially for structural information. SDF stands for structure-data file, and SDF files actually wrap the MDL Molfile. Multiple compounds are delimited by lines consisting of four dollar signs (\$\$\$\$). A key feature of the SDF format is its ability to include associated data. These data includes for example amount of the compound on store or internal identification number.
+
+SDF format became the most widely used standard for importing and exporting information on chemicals.\cite{sdf}  
+
+Virtually all chemical database applications used for structure searching of chemical information are capable of importing and exporting SDF files these days.\cite{sdf2}
+
+As we see SDF is the most commonly used format for chemical data exchange and thus the similarity framework use MDL Molfile and SDF files as well.
+
+
+\section{Libraries for cheminformatics}
+\label{chemLibrariesRef}
+As mentioned in previous chapters, it is necessary to work with many chemical-related computations such as descriptor or coefficient calculations, substructure searching, drawing structure diagrams on screen and many others.
+
+It is not the objective of the framework to implement such functionalities but to enable programmer to use any open-source library arbitrarily. What is needed however is the ability to work with chemical data in general way like reading and saving chemical files or some basic molecule manipulations. Of course some basic similarities have to be implemented as an example. 
+
+A lot of chemical libraries are available these days and it was necessary to choose one very carefully.
+
+
+\subsection{RDKit}
+RDKit describes itself like cheminformatics and machine learning software.  It is written in C++ with Python bindings and was designed for working with molecules like looping over atoms and bonds, modifying structures, reading molecules from various file formats or drawing molecules on the screen. 
+
+This library also computes various molecular descriptors and coefficients. Available similarity metrics include Tanimoto, Dice, Cosine, Sokal, Russel, Kulczynski, McConnaughey, and Tversky. Substructure matching is also present.
+
+Whole project is very well documented with various examples on the project website: \url{http://rdkit.org/}.
+This library is very complex and apparently satisfies all needs of the similarity framework.
+
+
+\subsection{Open Babel}
+Open Babel is a chemical toolbox designed to speak many languages of chemical data. It's an open, collaborative project allowing anyone to search, convert, analyse, or store data from molecular modelling, chemistry, solid-state materials, biochemistry, or related areas.\cite{babel}
+
+Open Babel offers writing and converting of over than 110 chemical file formats, molecular searching over line notations and like RDKit, is designed for manipulation of chemical data.
+
+This project offers ready-to-use programmer’s toolkit including C++, Perl and Python interfaces. Unfortunately descriptors, similarity metrics and substructure matching are missing. 
+
+This library was clearly designed only as a wrapper over chemical data and doesn’t aim at similarities at all. It’s not necessarily disadvantage because definition of similarities and descriptors in our framework lies in hands of the programmer and they may use any library they choose to. 
+
+Open Babel is available at \url{http://openbabel.org/}
+
+
+\subsection{Chemistry Development Kit}
+The Chemistry Development Kit (CDK) is a Java library for structural chemo- and bioinformatics. It is now developed by more than 50 developers all over the world and used in more than 10 different academic as well as industrial projects worldwide\cite{cdk2}. While the CDK project was founded in 2000, the code base originates from the groundbreaking open source cheminformatics work Christoph Steinbeck started in 1997.\cite{cdk}
+
+This library is also very complex and tries to satisfy all possible needs of cheminformatics. According to documentation at \url{http://sourceforge.net/apps/mediawiki/cdk/} it can do much more than RDKit. CDK offers many descriptor computations, all common similarity coefficients, structure searching and very robust interface for atom and molecule manipulation. 
+
+By many CDK is considered as the most reliable and complex solution and is actively developed by its community so there are chances that implementation will be bug free. On the project website there is also a list of various real-world applications using CDK as their core library for chemicals.
+
+
+\subsection{MayaChemTools}
+Unlike CDK or RDKit this library is designed to be lightweight and fast. It is basically a set of Perl scripts. MayaChemTools is designed for fast computation of descriptors and many similarity coefficients. In fact it has 26 coefficients thus more than all other libraries.
+
+
+\subsection{E-Dragon}
+E-Dragon is the electronic remote version of the well-known software DRAGON, which is an application for the calculation of molecular descriptors developed by the Milano Chemometrics and QSAR Research Group of Prof. R. Todeschini. These descriptors can be used to evaluate molecular structure-activity or structure-property relationships, as well as for similarity analysis and screening of molecule databases. Dragon provides more than 1 600 molecular descriptors that are divided into 20 logical blocks. The first release of Dragon dates back to 1997.\cite{dragon} 
+
+This is in fact an on-line version of commercial software and cannot be used internally by the framework.
+
+\subsection{Conclusion}
+According to information available best candidates were CDK and RDkit. They are both very complex and would satisfy all needs of the framework. They are also both well documented. Finally CDK was chosen because of its strong foundation in academic community and recent active development. Another advantage of the CDK is its implementation in Java since Java EE is ideal environment for web application development (see chapter XY).
+
+
+\section{Working with CDK}
+As mentioned in previous chapter CDK is designed to implement cheminformatics software and thus can manage many different tasks. Key features for our framework are wrapper for molecules, descriptor calculations and structure searching.
+
+\subsection{Atoms, bonds and molecules in CDK}
+The basic objects in the CDK are the IAtom, IBond and IAtomContainer. The name of the latter is somewhat misleading, as it contains not just IAtoms but also IBonds. The primary use of the model is the graph-based representation of molecules, where bonds are edges between two atoms being the nodes.\cite{cdk}
+
+\subsubsection{Atoms}
+The CDK interface IAtom is the underlying data model of atoms. Creating a new atom is very easy. For example, we can create an atom of element type carbon, as defined by the element's symbol that we pass as parameter in the constructor (See Fig. \ref{cdkAtomCode}).
+
+\begin{figure}
+\begin{lstlisting}
+IAtom atom = new Atom("C");
+\end{lstlisting}
+\caption{Carbon atom inicialization in CDK}
+\label{cdkAtomCode}
+\end{figure}
+
+A CDK atom has many properties, many of them inherited from the IElement, IIsotope and IAtomType interfaces. Figure \ref{fig:cdkAtomModel} shows the interface inheritance specified by the CDK data model. 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=3cm]{img/cdk-atom.png}
+  \caption{The IAtom interface extends the IAtomType interface,
+which extends the IIsotope interface, which, in turn, extends
+the IElement interface.}
+  \label{fig:cdkAtomModel}
+\end{figure}
+
+The most common properties of IElements are their symbol and atomic number. IIsotope information adds mass number, exact mass and natural abundance. Finally the IAtomType interface contains fields that relate to atom types. These properties include formal charge, neighbor count, maximum bond order and atom type name. Atom types are an important concept in cheminformatics. They describe some basic facts about that particular atom in some particular configuration. These properties are used in many cheminformatic algorithms, including adding hydrogens to hydrogen-depleted chemical graphs.\cite{cdk}
+
+\subsubsection{Bonds}
+The IBond interface of the CDK is an interaction between two or more IAtoms. While the most common application in the CDK originates from graph theory, it is not restricted to that. That said, many algorithms implemented in the CDK expect a graph theory based model, where each bond connects two, and not more, atoms.
+
+For example if we want to create ethanol (See Fig. \ref{fig:ethanol}) in CDK, first we define all atoms and then two bonds between them (See Fig. \ref{cdkEthanolCode}).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=6cm]{img/ethanol.png}
+  \caption{Chemical structure diagram of Ethanol}
+  \label{fig:ethanol}
+\end{figure}
+
+\begin{figure}
+\begin{lstlisting}
+IAtom atom1 = new Atom("C")
+IAtom atom2 = new Atom("C")
+IAtom atom3 = new Atom("O")
+IBond bond1 = new Bond(atom1, atom2, IBond.Order.SINGLE);
+IBond bond2 = new Bond(atom2, atom3, IBond.Order.SINGLE);
+\end{lstlisting}
+\caption{Ethanol inicialization in CDK}
+\label{cdkEthanolCode}
+\end{figure}
+
+
+\subsubsection{Molecules}
+We already saw in the previous pieces of code how the CDK can be used to create molecules, and while the above is strictly enough to find all atoms in the molecule starting with only one of the atoms in the molecule, it often is more convenient to store all atoms and bonds in a container. 
+
+The CDK has two main containers, which are identical in functionality, but which have different semantics: the IAtomContainer and the IMolecule. The first is a general container to holds atoms an bonds, while the IMolecule has the added implication that it is meant that the container holds a single molecule, of which all atoms are connected to each other via one or more covalent bonds. It is important to note, that the latter is not enforced.\cite{cdk}
+
+IAtomContainer is very important because in our framework similarity and descriptor interfaces expect this type as parameter. Using CDK, IAtomContainer can be created from all common chemical representations such as five versions of MDL molfile, SDF file, HyperChem and many others.
+
+
+
+\section{Core entities of the framework}
+\label{coreEntit}
+Thanks to the CDK library we are capable of working with chemicals and thus its time to design the structure of the whole framework. Class diagram in Figure \ref{fig:classDiagram} illustrates the final structure. Both Similarity and Descriptor can be defined modularly.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=13cm]{img/Class.png}
+  \caption{Class diagram of the Similarity}
+  \label{fig:classDiagram}
+\end{figure}
+
+\subsection{Abstraction of chemical compound}
+Implementation of interface \textit{ICompound} represents chemical structure through the whole framework. This is basically a wrapper for molecule from database, which all similarities, descriptors and algorithms are designed to work with. \textit{IAtomContainer} from CDK library, which all compounds contain, achieves this. Every time any molecule is retrieved from any database it has to be converted to this type.
+
+Of course this could be very limited because programmer may not want to use CDK in their descriptors. Fortunately \textit{IAtomContainer} can be freely converted to any format. So if programmer uses any other chemical toolkit working, for example with Mol2 format, they can use CDK to convert \textit{IAtomContainer} to Mol2 and pass it to the custom descriptor.
+
+List of all methods that ICompound interface defines:
+
+\begin{itemize}
+\item \textit{getAtomContainer()} \\ In this method programmer should specify conversion of arbitrary chemical representation to IAtomContainer. CDK library is ideal for this purpose since it can create this container from all commonly used formats.
+\item \textit{getId() and setId(id)}  \\ These are getter and setter for compound id. Every compound should represent the structure from database and so it should have its id. These ids are also stored in similarity result after similarity searching.
+\end{itemize}
+
+
+\subsection{Abstraction of similarity}
+All similarity methods are specified in \textit{ISimilarity} interface and their detailed descriptions are shown in following list. 
+
+\begin{itemize}
+\item \textit{findAllSimilar()} \\ In this method similarity algorithm should be specified. This method is meant for algorithm that goes through a given data se and uses predefined similarities for similarity matching.
+\item \textit{screen(start, limit)}  \\ Method is responsible for fast compound screening. This method should retrieve batch of compounds from database and performs rapid pre-elimination of inappropriate compounds, for example fingerprint comparison. 
+
+If there are no more compounds in database \textit{NoMoreCompoundsException} that marks the end of whole searching is thrown.
+
+\item \textit{calculateSimilarity(compound)}  \\ This is a place for computation of given and request compound. This method returns value between 0 and 1 where 0 marks no similarity by definition. This is where programmer uses descriptors and defines similarity metrics. Function is called by default from loop in \textit{findAllSimilar()} method of \textit{AbstractSimilarity} class.
+
+\item \textit{getCompounds(start, limit)}  \\ Method is responsible for compound retrieval from the database. This is place where database connection should be defined or used. 
+
+\item \textit{getCompoundById(id)}  \\ This method should return one compound from the database identified by its id. Method is needed when similarity results are known and client calls for specific compound. This is place where database connection should be defined or used.
+
+\item \textit{setParameters(parameters)}  \\ This is a setter for similarity parameters and place where parameter validation should be implemented.
+
+\item \textit{getParameters()}  \\ This is a simple getter for similarity parameters. 
+
+\item \textit{getParameterNames()}  \\ This is a simple getter returning parameter names. This is needed for client asking similarity parameters definition. 
+
+\item \textit{getParameterType(name))}  \\ This method accepts name of the parameter and returns its type. This is needed for client asking similarity parameters definition.
+
+\item \textit{getRequestCompound() and setRequestCompound(ICompound)}  \\ These methods represent setter and getter for request compound implementing ICompound interface. Search algorithm uses it in order to find similarities in database.
+
+\end{itemize}
+
+
+
+\subsection{Default implementation of similarity}
+Basic implementation of ISimilarity interface is present in \textit{AbstractSimilarity} class and defines default functionality for other similarities and implements algorithm for finding similar structures in the database. The algorithm is described in activity diagram in Figure \ref{fig:activityDiagram}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=13cm]{img/Flow.png}
+  \caption{Flow diagram of the basic similarity algorithm}
+  \label{fig:activityDiagram}
+\end{figure}
+
+Of course programmer can override this method and define behavior arbitrarily. This method is called from web service and returns set of all similar compounds.
+
+This abstract class contains several protected variables that may be configured:
+\begin{itemize}
+\item \textit{List$<$SimilarityResult$>$ similarCompounds} \\ This is the list containing similar compounds that have been found so far. Only compound identification number and its similarity is stored in object called SimilarityResult (see Section \ref{memoryConsumptionRef}).
+\item \textit{ICompound requestCompound} \\ Simple object storing information about the query compound implementing \textit{ICompoud} interface.
+\item \textit{Integer batchSize = 1000} \\ We don’t want to process all compounds from database at once and therefore molecules from the database are retrieved and inspected in batches. This is for memory consumption reasons (see Section \ref{memoryConsumptionRef}).
+\item \textit{Double threshold = 0.8} \\ Threshold specifies the minimum similarity of interest. Defaults to 80\%.
+\item \textit{Integer numberOfResults = 100000} \\ For scalability reasons maximum number of results must be limited. Default value is set to 100 000 (see Section \ref{memoryConsumptionRef}).
+\end{itemize}
+
+\textit{AbstractSimilarity} also defines default screening. This screening does nothing. Only returns retrieved compounds from database and throw \textit{NoMoreCompoundsException} when all compounds are checked.
+
+
+
+
+\subsection{Abstraction of the descriptor}
+All descriptors are in fact very simple classes implementing \textit{ICompoundDescriptor} interface. There is only one method defined called \textit{calculate} expecting \textit{IAtomContainer} as parameter and returns any object. This method is responsible for descriptor calculation and may return any data type as the result.
+
+This is sufficient for molecular descriptors but not for similarity coefficients. If there is a need to compute distance coefficient between two molecules, descriptor implementation should have a private variable representing the request molecule.
+
+
+\section{Scalability of the framework}
+Since it is not rare that chemical databases contain thousands of compounds, it is clear that scalability will be the great issue. However it’s not the main goal of the framework to optimize different kinds of similarity searching. It far exceeds scope of this thesis and it is a large discipline in cheminformatics. Scalability of specific similarity lies in the hands of the programmer. 
+
+Nevertheless scalability has to be discussed because the framework must be ready for working with large data sets and has to provide sufficient interface for most possible cases. In addition, few similarities were implemented as an example and were observed to be very slow with increasing number of compounds.
+
+First of all we have to consider database with millions of molecules. In this case some queries may return 80-90\% of all compounds. For instance substructure searching for benzene ring that is extremely common will return most of the compounds.  It would be very unreasonable to keep all these results in memory or even worse try to send them all to the client through HTTP protocol. 
+
+\subsection{Memory consumption}
+\label{memoryConsumptionRef}
+The main concern is of course, memory consumption. Consider that compound is saved as MDL connection table and thus can be represented as a \textit{String} object (see Section \ref{mdlFormatRef}). We also assume that the average MDL file contains about 2300 characters (may be much more in specific databases). 
+
+In order to find out how much memory our search result shall consume, we need to look at some Java primitive types, references and objects. 
+
+In Java every \textit{Char} type takes 2 bytes of memory, \textit{Integer} takes 4 bytes, reference to the object consumes 4 bytes and finally any object in Java needs additional 8 bytes for header information. Arrays consume same as the object plus 4 bytes representing Integer holding information about array length.  
+
+As mentioned earlier one compound is represented as a \textit{String} object. Every \textit{String} in Java consists of the following:
+\begin{itemize}
+\item Char array containing the actual characters,
+\item Integer offset into the array at which the string starts,
+\item Integer for length of the string,
+\item Integer for the cached calculation of the hash code.
+\end{itemize}
+
+An empty \textit{String} thus consists of 8 bytes for the object header, 4 bytes for \textit{Char} array reference, 12 bytes for \textit{Char} array object header and 4*3 bytes for 3 \textit{Integers}. That gives us 36 bytes. However objects in Java occupy a number of bytes that is a multiple of 8 so we need to add 4 bytes of padding. Empty \textit{String} thus needs 40 bytes of memory.
+
+If the \textit{String} contains 2300 characters, then the required memory usage is the empty \textit{String} (40 bytes) plus 2300*2=4600 bytes for \textit{Chars}. That gives us 4640 bytes and since it is multiple of 8 it is the final memory consumption.
+
+If the result of similarity searching gives us for example 100 000 compounds, the minimum memory taken up is about 442 MB. I am not taking into account that in our framework these results are part of another object and shall use some additional bytes for each. Nevertheless with a few concurrent searches this would cause memory overload very quickly. This is why the results of the similarity searching are saved differently and maximum number of results is controlled.
+
+In final implementation only identification number of compound and its computed similarity is being kept in the memory in object called \textit{SimilarityResult}. This object consumes 8 bytes for header information, 8 bytes for type \textit{Double} representing similarity and 8 bytes for id of type \textit{Long}. That gives us 24 bytes for each result. It means that 100 000 results will take up only about 2.3 MB of memory.
+
+Similarity itself then needs to be able to retrieve actual compounds from database by id and since every similarity has to implement such method from \textit{ISimilarity} interface everything shall work perfectly.
+
+According to the discussion above it was decided to set the limit of maximum possible results to 100 000. It is assumed that in the real world usage, no more results are needed. This behaviour can be changed in \textit{AbstractSimilarity} class.
+
+For the same reasons similarity searching is not performed over all compounds at once but they are retrieved from database in batches (see Fig. \ref{fig:activityDiagram}).
+
+The memory issue has also impact on the client side of the framework. When client sends the similarity request over HTTP protocol, they receive only number of results and identification number for the session as response (see Fig. \ref{fig:basic-1}). During the same session client can send another request for specific part of the results. Under these circumstances client can easily paginate the results with low system memory consumption and small data transfer (see Fig. \ref{fig:basic-2}).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=13cm]{img/basic-1.png}
+  \caption{Workflow of the framework during the \textit{AtomCount} similarity request}
+  \label{fig:basic-1}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=13cm]{img/basic-2.png}
+  \caption{Workflow of the framework during the request for results of previous \textit{AtomCount} similarity searching}
+  \label{fig:basic-2}
+\end{figure}
+
+
+\subsection{Speed and CPU usage}
+Assuming we have millions of compound in the database and every compound has to be inspected for similarity every time, searching may be very slow. As mentioned before it’s not the goal of this thesis to optimize all different kinds of similarity searching. However the topic has to be discussed so the framework is able to provide appropriate tools.
+
+There are two ways how similarity searching may be optimized. The first way is to optimize the algorithm for similarity and descriptor computation and the second is to search more effectively and perform some sort of multi-stage searching mechanism.
+
+Every similarity is unique and has to be optimized in a different way.
+
+\subsubsection{Scalability of substructure similarity}
+A substructure search identifies all the molecules in the database that contain a specified substructure. Substructure searching is perhaps the most widely used approach to identify compounds of interest and thus is implemented as an example in our framework. Despite of the fact that this similarity is quite simple to understand it may by very time consuming to perform.
+
+According to graph data representation of compounds discussed in Section \ref{chemicalDataRef} graph theoretic methods can be used to perform substructure searching, which is equivalent to determining whether one graph is entirely contained within another, a problem known as subgraph isomorphism. Efficient algorithms for performing subgraph isomorphism are well established, but for large chemical databases they are usually too slow to be used alone. 
+
+The subgraph isomorphism belongs to a class of problems known as NP-complete, meaning that to find a solution all algorithms require an amount of time that varies exponentially with the size of the problem. 
+
+The ``brute-force'' approach to subgraph isomorphism involves testing every possible way to map the nodes of the substructure graph onto those of the database molecule. Unfortunately, if there are $N_S$ nodes in the substructure query and $N_M$ nodes in the database molecule then there are $\frac{N_M!}{(N_M-N_S)!}$ possible mappings that must be tested.\cite{intro} It is clear that even for very small substructures and molecules with modest numbers of atoms this is an impractical approach. 
+
+Fortunately, more efficient methods are available but still characteristic of NP-complete problems is that no fast solution to them is known. That is, the time required to solve the problem using any currently known algorithm increases very quickly as the size of the problem grows.
+
+For this reason most chemical database systems use a two-stage mechanism to perform substructure search. 
+
+The first step involves the use of screening to rapidly eliminate molecules that cannot possibly match the substructure query. The aim is to discard a large proportion (ideally more than 99\%) of the database. The structures that remain are then subjected to the more time-consuming subgraph isomorphism procedure to determine which of them truly do match the substructure. 
+
+Molecule screens are often implemented using binary string representations of the molecules and the query substructure called bitstrings or fingerprints. These bitstrings consist of a sequence of ``0''s and ``1s''. They can be compared and manipulated very rapidly, especially if held in the computer’s memory. A ``1'' in a fingerprint usually indicates the presence of a particular structural feature and a ``0'' its absence (see Fig. \ref{fig:structureFingerprint}). Thus if a feature is present in the substructure (there is a ``1'' in its fingerprint) but not in the molecule (the corresponding value is ``0'') then it can be readily determined from the fingerprint comparison that the molecule cannot contain the substructure.\cite{intro}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=13cm]{img/structurefingerprint.png}
+  \caption{The bitstring representation of a query substructure is illustrated together with the
+corresponding bitstrings of two database molecules. Molecule A passes the screening stage since
+all the bits set to ``1'' in the query are also set in its bitstring. Molecule B, however, does not pass
+the screening stage since the bit representing the presence of O is set to ``0'' in its bitstring.}
+  \label{fig:structureFingerprint}
+\end{figure}
+
+
+\section{Screening and fingerprints}
+We see that screening using fingerprints plays the key role in scalability of substructure searching. However screening is used in may other similarities as well and thus many different fingerprint methods were developed. Screening using these fingerprints is called binary screening and is considered to be very fast.
+
+Most binary screening methods use one of two approaches. In a structural key approach, each position in the fingerprint corresponds to the presence or absence of a predefined substructure or molecular feature. This is often specified using a fragment dictionary. The \textit{i}th substructure in the dictionary corresponds to the \textit{i}th bit in the fingerprint. 
+
+It is necessary to design the dictionary according to the molecules expected to be stored in the database and also to consider typical queries that might be submitted.
+
+The alternative to structural fingerprints is to use a hashed fingerprint, which does not require a predefined fragment dictionary, and so in principle has the advantage of being applicable to any type of molecular structure. In structural fingerprints the choice of dictionary included has a critical effect on the search speed across the databases. An effective choice will screen out virtually all structures that aren't of interest, greatly increasing search speed, whereas a poor choice will cause many false hits, which slows searching to an intolerable level. 
+
+Hashed fingerprints address this lack of generality by eliminating the idea of pre-defined patterns. A fingerprint is a bit array, but unlike a structural key there is no assigned meaning to each bit. Hash fingerprint characterizes the pattern, but the meaning of any particular bit is not well defined. 
+
+It is produced by generating all possible linear paths of connected atoms through the molecule containing between one and a defined number of atoms (typically seven). Each pattern serves as a seed to a pseudo-random number generator, the output of which is a set of bits (typically 4 or 5 bits per pattern). The set of bits thus produced is added to the fingerprint with a logical OR.\cite{daylight}
+
+In spite of the difference between the meaning of a hashed and structural fingerprint's bits, hashed fingerprints share an important feature with structural. If a pattern is a substructure of a molecule, every bit that is set in the pattern's fingerprint will be set in the molecule's fingerprint. This means that, like structural keys, we can use simple bit operations on fingerprints to screen molecules as we search a database, making a fingerprint comparison an extremely fast screen for searching.\cite{daylight}
+
+In conclusion, it should be noted that binary screening plays a major role and therefore is an integral par of the framework. In fact any fingerprint is a special case of the descriptor and basic algorithm designed for similarity searching has its screening part. The screening itself has its place in \textit{ISimilarity} interface. 
+
+\section{Example usage of the framework}
+Now we have everything we need to get started. This section provides a simple example of the framework usage.
+
+We will build a new custom similarity based on molecular weight. First thing we need is to define new descriptor that will provide molecular weight of a given compound. Lets name it \textit{MolWeightDescriptor}.
+
+As mentioned in previous sections, our new descriptor has to implement \textit{ICompoundDescriptor} interface and thus will override the \textit{calculate(IAtomContainer)} method. Our new descriptor will use the CDK library for molecular weight retrieval that accepts \textit{IAtomContainer} type as parameter. Return value will be of type \textit{Double} (see Fig. \ref{MolWeightDescriptorCode}).
+
+\begin{figure}
+\begin{lstlisting}
+public class MolWeightDescriptor implements ICompoundDescriptor {
+    
+    public MolWeightDescriptor() {
+	
+    }
+
+    @Override
+    public Double calculate(AtomContainer c) throws CompoundSearchException {
+	
+	// Inicialization of CDK molecular weight descriptor
+	WeightDescriptor wd = new WeightDescriptor();	
+	
+	// Returns result converted to Double
+	return Double.parseDouble(wd.calculate(c).getValue().toString());
+	
+    } 
+}
+\end{lstlisting}
+\caption{Descriptor returning molecular weight of given molecule using CDK.}
+\label{MolWeightDescriptorCode}
+\end{figure}
+
+As we see it’s very simple to define this kind of descriptor using CDK. However if programmer for some reason doesn’t want to use CDK for computations, \textit{IAtomContainer} can be converted to any common format. 
+
+Figure \ref{ConvertAtomToMDL} shows how to convert \textit{IAtomContainer} to MDL format using \textit{MDLV2000Writer}. Complete list of supported format can be found in PRILOHA XY.
+
+\begin{figure}
+\begin{lstlisting}
+ByteArrayOutputStream baos = new ByteArrayOutputStream();
+MDLV2000Writer m2w = new MDLV2000Writer(baos);
+m2w.write(IAtomContainer);
+m2w.close();
+String MDLmolfile = new String(baos.toByteArray(), "UTF-8");
+\end{lstlisting}
+\caption{Converting \textit{IAtomContainer} object to MDL format using \textit{MDLV2000Writer} from CDK.}
+\label{ConvertAtomToMDL}
+\end{figure}
+
+Now we have a descriptor implemented and thus we can build similarity operating over it. Lets name it \textit{MolWeightSimilarity}.
+
+We know from previous section that our new similarity has to implement \textit{ISimilarity} interface and we also know that \textit{AbstractSimilarity} class provides basic implementation and default behavior. In this case it is sufficient to extend this abstract class. 
+
+Our molecular weight similarity will have two parameters. First of them will be the value of minimal similarity of interest. If you don’t specify this parameter default value will be 0.8 defined in \textit{AbstractSimilarity}. The second is the number of results we want to retrieve. Only this number of most similar compounds is then returned.
+
+Extending AbstractSimilarity programmer has to implement:
+\begin{itemize}
+\item Constructor for new similarity. One constructor without parameters is required in order to have new similarity available automatically via reflection in web service. 
+\item Override \textit{setRequestCompound(ICompound)} method as setter for query compound. Descriptor computations are usually present.
+\item Override \textit{screen(start, limit)} method if there is any database screening in the similarity. If there is no screening this method can be omitted.
+\item Override \textit{calculateSimilarity(AtomContainer)} method. This is where similarity calculation is performed.
+\item Parameter handling by overriding \textit{setParameters(parameters)}, \textit{getParameters()}, \textit{getParameterNames()} and \textit{getParameterType(parameter)} methods. Descriptions of these methods were discussed in Section \ref{coreEntit}.
+\item Compound retrieval from database in methods \textit{getCompounds(start, limit)} and   \textit{getCompoundById(id)}.
+\end{itemize}
+
+First of all we implement constructors and compound setter (see Fig. \ref{MolWeightSimilarity1}). Notice that we have two private variables one for descriptor instance and second for descriptor value of query compound. The second one is for scalability reasons because we don’t want to compute descriptor of query molecule each time two compounds are compared. 
+
+\begin{figure}
+\begin{lstlisting}
+public class MolWeightSimilarity extends AbstractSimilarity {
+
+    // Descriptor for molecular weight retrieval
+    private ICompoundDescriptor molWeightDescriptor;
+    // Result of the molecular weight descriptor
+    private Double mwdRequestResult;
+
+    public MolWeightSimilarity(ICompound c) throws CompoundSearchException {
+	this.requestCompound = c;
+
+	this.molWeightDescriptor = new MolWeightDescriptor();
+	this.mwdRequestResult = (Double) this.molWeightDescriptor.calculate(this.requestCompound.getAtomContainer());
+    }
+
+    public MolWeightSimilarity() {
+	this.molWeightDescriptor = new MolWeightDescriptor();
+    }
+
+    @Override
+    public void setRequestCompound(ICompound c) throws CompoundSearchException {
+	this.requestCompound = c;
+	this.mwdRequestResult = (Double) this.molWeightDescriptor.calculate(this.requestCompound.getAtomContainer());
+    }
+}
+
+\end{lstlisting}
+\caption{Implementation of contructors and compound setter in the \textit{MolWeightSimilarity}.}
+\label{MolWeightSimilarity1}
+\end{figure}
+
+In our case there is no database screening necessary since molecular weight computation is very fast. If programmer wants to have some screening however they can screen for example over number of atoms. In other words if required molecular weight is very small we can rapidly discard molecules with a large number of atoms.
+
+Now we add the implementation of similarity computation. Similarity is defined as the ratio of molecular weights between query and given molecule (see Fig. \ref{MolWeightSimilarity2}).
+
+\begin{figure}
+\begin{lstlisting}
+@Override
+public Double calculateSimilarity(AtomContainer c) throws CompoundSearchException {
+    Double requestMolWeight = Double.parseDouble(this.mwdRequestResult.toString());
+    Double currentMolWeight = Double.parseDouble(this.molWeightDescriptor.calculate(c).toString());
+
+    Double similarity = (double) Math.min(requestMolWeight, currentMolWeight) / Math.max(requestMolWeight, currentMolWeight);
+
+    return similarity;
+}
+\end{lstlisting}
+\caption{Implementation of similarity computation in \textit{MolWeightSimilarity}.}
+\label{MolWeightSimilarity2}
+\end{figure}
+
+
+The next step is parameter handling. As mentioned earlier, our molecular weight similarity will accept two parameters - the minimum required similarity (\textit{threshold}) and number of best results (\textit{numberOfResults}).  
+
+First of all we create a setter that accepts list of parameters. This is also ideal place for parameter validation. If validation fails \textit{CompoundSearchException} with corresponding message explaining the error needs to be thrown (see Fig. \ref{MolWeightSimilarity3}). Web service will then return HTTP response with status code of 500 and will attach the error message. 
+
+\begin{figure}
+\begin{lstlisting}
+@Override
+public void setParameters(List<String> parameters) throws CompoundSearchException {
+
+    if (parameters.size() != 2) {
+        throw new CompoundSearchException("MolWeightSimilarity requires 2 parameters");
+    }
+
+    try {
+        this.threshold = Double.parseDouble(parameters.get(0));
+        if (this.threshold <= 0) {
+            throw new CompoundSearchException("MolWeightSimilarity threshold parameter cannot be less or equal to 0.");
+        }
+    } catch (NumberFormatException e) {
+        throw new CompoundSearchException("MolWeightSimilarity threshold parameter must be of type Double");
+    }
+	
+    try {
+        this.numberOfResults = Integer.parseInt(parameters.get(1));	
+        if (this.numberOfResults <= 0) {
+            throw new CompoundSearchException("MolWeightSimilarity numberOfResults parameter cannot be less or equal to 0.");
+        }
+    } catch (NumberFormatException e) {
+        throw new CompoundSearchException("MolWeightSimilarity numberOfResults parameter must be of type Integer");
+    }
+}
+
+\end{lstlisting}
+\caption{Implementation of the parameter setter and parameter validation in \textit{MolWeightSimilarity}.}
+\label{MolWeightSimilarity3}
+\end{figure}
+
+
+Next parameter methods are listed in Figure \ref{MolWeightSimilarity4}. Method \textit{getParameters()} returns an array of type \textit{Object} because parameter can by of any data type. On the other hand \textit{getParameterNames()} returns array of type \textit{String} representing human readable names of parameters that will be presented to client via web service.  And finally \textit{getParameterType(name)} returns simple \textit{Object} of the same type as similarity parameter which name was given.
+
+\begin{figure}
+\begin{lstlisting}
+@Override
+public Object[] getParameters() {
+    Object[] parameters = new Object[2];
+    parameters[0] = this.threshold;
+    parameters[1] = this.numberOfResults;
+
+    return parameters;
+}
+
+@Override
+public String[] getParameterNames() {
+    String[] names = new String[2];
+    names[0] = "treshold";
+    names[1] = "numberOfResults";
+
+    return names;
+}
+
+@Override
+public Object getParameterType(String name) {
+    if (name.equals("treshold")) {
+         return 0.0;
+    }
+
+    if (name.equals("numberOfResults")) {
+        return 1;
+    }
+
+    return null;
+}
+\end{lstlisting}
+\caption{Implementation of parameter getters in \textit{MolWeightSimilarity}.}
+\label{MolWeightSimilarity4}
+\end{figure}
+
+The final thing we need to implement is the compound retrieval. Methods \textit{getCompounds(start, limit)} and \textit{getCompoundById(id)} should provide such functionality. These methods are very versatile since compound retrieval can be defined arbitrarily. Programmer can specify database connection, reading from file or can call remote application interface. In our example we will call an existing REST web service that has method for compound retrieval. We will obtain a reference to this resource form context of Java application container. This is called dependency injection. Method \textit{getCompounds(start, limit)} is listed in Figure \ref{MolWeightSimilarity5} the second one is very similar.
+
+\begin{figure}
+\begin{lstlisting}
+@Override
+public List<? extends ICompound> getCompounds(Integer start, Integer limit) throws CompoundSearchException {
+    ListResource lr;
+    List<? extends ICompound> result;
+    try {
+        Context context = new InitialContext();
+        lr = (ListResource) context.lookup("java:module/ListResource");
+        // Must be set. 404 WebApplicationException is invoked and app stopped when empty result otherwise.
+        lr.setCalledFromApp(true);
+    } catch (NamingException e) {
+        throw new CompoundSearchException("Database error in AtomCountSimilarity. Cannot obtain REST resources.");
+    }
+
+    result = lr.getCompounds(limit, start);
+
+    return result;
+}
+\end{lstlisting}
+\caption{Implementation of compound retrieval from REST web service in \textit{MolWeightSimilarity}.}
+\label{MolWeightSimilarity5}
+\end{figure}
+
+\setsecnumdepth{part}
+\chapter{Conclusion}
+
+Conclusion
+
+\bibliographystyle{csn690}
+\bibliography{matesbibliography}
+
+\setsecnumdepth{all}
+\appendix
+
+\chapter{Acronyms}
+% \printglossaries
+\begin{description}
+	\item[GUI] Graphical user interface
+	\item[XML] Extensible markup language
+\end{description}
+
+
+\chapter{Contents of enclosed CD}
+
+%change appropriately
+
+\begin{figure}
+	\dirtree{%
+		.1 readme.txt\DTcomment{the file with CD contents description}.
+		.1 exe\DTcomment{the directory with executables}.
+		.1 src\DTcomment{the directory of source codes}.
+		.2 wbdcm\DTcomment{implementation sources}.
+		.2 thesis\DTcomment{the directory of \LaTeX{} source codes of the thesis}.
+		.1 text\DTcomment{the thesis text directory}.
+		.2 thesis.pdf\DTcomment{the thesis text in PDF format}.
+		.2 thesis.ps\DTcomment{the thesis text in PS format}.
+	}
+\end{figure}
+
+\end{document}
